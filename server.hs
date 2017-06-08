@@ -17,9 +17,6 @@ main = do
   bind sock (SockAddrInet 4242 iNADDR_ANY)
   listen sock 2
   chan <- newChan
-  forkIO $ fix $ \loop -> do
-    (_, msg) <- readChan chan
-    loop
   mainLoop sock chan 0
  
 type Msg = (Int, String)
