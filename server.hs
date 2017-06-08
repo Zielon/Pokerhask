@@ -23,8 +23,10 @@ type Msg = (Int, String)
  
 mainLoop :: Socket -> Chan Msg -> Int -> IO ()
 mainLoop sock chan msgNum = do
-  conn <- accept sock
-  forkIO (runConn conn chan msgNum)
+  (soc, addr) <- accept sock
+  putStrLn ("New connection # " ++ (show addr))
+  -- For every incoming connection create a new thread.
+  forkIO (runConn (soc, addr) chan msgNum)
   mainLoop sock chan $! msgNum + 1
  
 runConn :: (Socket, SockAddr) -> Chan Msg -> Int -> IO ()
@@ -32,7 +34,7 @@ runConn (sock, _) chan msgNum = do
     let broadcast msg = writeChan chan (msgNum, msg)
     hdl <- socketToHandle sock ReadWriteMode
     hSetBuffering hdl NoBuffering
- 
+
     hPutStrLn hdl "Hi, what's your name?"
     name <- liftM init (hGetLine hdl)
     broadcast ("--> " ++ name ++ " entered chat.")
