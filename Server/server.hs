@@ -1,4 +1,4 @@
--- Learning module
+-- | Simple server app
 
 module Main where
  
