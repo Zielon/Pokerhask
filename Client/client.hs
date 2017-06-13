@@ -2,28 +2,33 @@
 module Main where
 
 import System.IO
+import Control.Monad.Fix
+import Control.Monad (liftM, when)
+import Control.Exception
+import Control.Concurrent
 import Network.Socket hiding (recv)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString.Char8 as C
 
 main :: IO ()
 main = do
-    start "localhost" 4545
-
-start :: String -> Int -> IO ()
-start host port = do
   addrinfos <- getAddrInfo Nothing (Just "127.0.0.1") (Just "4242")
   let serveraddr = head addrinfos
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
   connect sock (addrAddress serveraddr)
-  massanger sock
+  start sock
 
-massanger :: Socket -> IO ()
-massanger sock = do
-  msg <- getLine
-  sendAll sock $ C.pack msg
+start :: Socket -> IO ()
+start sock = do
 
-  -- recived <- recv sock 4242
-  -- putStrLn $ C.unpack recived
+  hdl <- socketToHandle sock ReadWriteMode
 
-  massanger sock
+  forkIO $ fix $ \loop -> do
+        name <- liftM init (hGetLine hdl)
+        putStrLn $ name
+        loop
+
+  fix $ \loop -> do
+        msg <- getLine
+        hPutStrLn hdl msg
+        loop

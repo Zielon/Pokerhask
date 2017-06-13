@@ -14,7 +14,7 @@ main = do
   sock <- socket AF_INET Stream 0
   setSocketOption sock ReuseAddr 1
   bind sock (SockAddrInet 4242 iNADDR_ANY)
-  listen sock 5
+  listen sock 2
   chan <- newChan
   mainLoop sock chan 0
  
@@ -23,7 +23,7 @@ type Msg = (Int, String)
 mainLoop :: Socket -> Chan Msg -> Int -> IO ()
 mainLoop sock chan msgNum = do
   (soc, addr) <- accept sock
-  putStrLn ("New connection # " ++ (show addr))
+  putStrLn $ "New connection # " ++ (show addr)
   -- For every incoming connection create a new thread.
   forkIO (runConn (soc, addr) chan msgNum)
   mainLoop sock chan $! msgNum + 1
@@ -35,10 +35,10 @@ runConn (sock, _) chan msgNum = do
     hSetBuffering hdl NoBuffering
 
     hPutStrLn hdl "Hi, what's your name?"
-    -- name <- liftM init (hGetLine hdl)
-    -- broadcast ("--> " ++ name ++ " entered chat.")
-    -- hPutStrLn hdl ("Welcome, " ++ name ++ "!")
-    let name = "User"
+    name <- liftM init (hGetLine hdl)
+    broadcast ("--> " ++ name ++ " entered chat.")
+    hPutStrLn hdl ("Welcome, " ++ name ++ "!")
+ 
     commLine <- dupChan chan
  
     -- fork off a thread for reading from the duplicated channel
