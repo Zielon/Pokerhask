@@ -1,5 +1,4 @@
 -- | Simple server app
-
 module Main where
  
 import Network.Socket
@@ -15,7 +14,7 @@ main = do
   sock <- socket AF_INET Stream 0
   setSocketOption sock ReuseAddr 1
   bind sock (SockAddrInet 4242 iNADDR_ANY)
-  listen sock 2
+  listen sock 5
   chan <- newChan
   mainLoop sock chan 0
  
@@ -36,10 +35,10 @@ runConn (sock, _) chan msgNum = do
     hSetBuffering hdl NoBuffering
 
     hPutStrLn hdl "Hi, what's your name?"
-    name <- liftM init (hGetLine hdl)
-    broadcast ("--> " ++ name ++ " entered chat.")
-    hPutStrLn hdl ("Welcome, " ++ name ++ "!")
- 
+    -- name <- liftM init (hGetLine hdl)
+    -- broadcast ("--> " ++ name ++ " entered chat.")
+    -- hPutStrLn hdl ("Welcome, " ++ name ++ "!")
+    let name = "User"
     commLine <- dupChan chan
  
     -- fork off a thread for reading from the duplicated channel
