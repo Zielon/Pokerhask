@@ -12,7 +12,9 @@ import qualified Data.ByteString.Char8 as C
 
 main :: IO ()
 main = do
-  addrinfos <- getAddrInfo Nothing (Just "127.0.0.1") (Just "4242")
+  putStrLn "Provide a port number:"
+  port <- getLine
+  addrinfos <- getAddrInfo Nothing (Just "127.0.0.1") (Just port)
   let serveraddr = head addrinfos
   sock <- socket (addrFamily serveraddr) Stream defaultProtocol
   connect sock (addrAddress serveraddr)
@@ -23,12 +25,14 @@ start sock = do
 
   hdl <- socketToHandle sock ReadWriteMode
 
-  forkIO $ fix $ \loop -> do
-        name <- liftM init (hGetLine hdl)
-        putStrLn $ name
-        loop
+  threadID <- forkIO $ fix $ \loop -> do
+                              name <- hGetLine hdl
+                              putStrLn $ name
+                              loop
 
   fix $ \loop -> do
         msg <- getLine
         hPutStrLn hdl msg
         loop
+
+  killThread threadID

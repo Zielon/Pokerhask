@@ -11,9 +11,11 @@ import Control.Monad.Fix (fix)
  
 main :: IO ()
 main = do
+  putStrLn "Provide a port number:"
+  port <- getLine
   sock <- socket AF_INET Stream 0
   setSocketOption sock ReuseAddr 1
-  bind sock (SockAddrInet 4242 iNADDR_ANY)
+  bind sock $ SockAddrInet (read port::PortNumber) iNADDR_ANY
   listen sock 2
   chan <- newChan
   mainLoop sock chan 0
@@ -23,7 +25,8 @@ type Msg = (Int, String)
 mainLoop :: Socket -> Chan Msg -> Int -> IO ()
 mainLoop sock chan msgNum = do
   (soc, addr) <- accept sock
-  putStrLn $ "New connection # " ++ (show addr)
+  putStrLn $ "New connection from # " ++ (show addr)
+
   -- For every incoming connection create a new thread.
   forkIO (runConn (soc, addr) chan msgNum)
   mainLoop sock chan $! msgNum + 1
@@ -50,11 +53,9 @@ runConn (sock, _) chan msgNum = do
     handle (\(SomeException _) -> return ()) $ fix $ \loop -> do
         line <- liftM init (hGetLine hdl)
         case line of
-             -- If an exception is caught, send a message and break the loop
              "quit" -> hPutStrLn hdl "Bye!"
-             -- else, continue looping.
              _      -> broadcast (name ++ ": " ++ line) >> loop
- 
+
     killThread reader                      -- kill after the loop ends
     broadcast ("<-- " ++ name ++ " left.") -- make a final broadcast
     hClose hdl                             -- close the handle
